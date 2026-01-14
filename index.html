@@ -1,0 +1,1959 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>教评系统</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://html2canvas.hertzen.com/dist/html2canvas.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', 'Microsoft YaHei', sans-serif;
+        }
+        
+        :root {
+            --primary-color: #4a8cff;
+            --secondary-color: #1a2b50;
+            --background-color: #f5f7fa;
+            --card-background: #fff;
+            --border-color: #eaeaea;
+            --text-primary: #333;
+            --text-secondary: #666;
+        }
+        
+        body {
+            background-color: var(--background-color);
+            color: var(--text-primary);
+            line-height: 1.6;
+            min-height: 100vh;
+        }
+        
+        .container {
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+        }
+        
+        /* 电脑端布局 */
+        @media (min-width: 768px) {
+            .container {
+                flex-direction: row;
+            }
+            
+            .editor-section {
+                flex: 1;
+                max-width: 400px;
+                border-right: 1px solid var(--border-color);
+            }
+            
+            .preview-section {
+                flex: 2;
+                overflow-y: auto;
+            }
+        }
+        
+        /* 编辑器区域 */
+        .editor-section {
+            background-color: var(--card-background);
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .editor-section h2 {
+            color: var(--secondary-color);
+            margin-bottom: 5px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid var(--primary-color);
+            font-size: 1.5rem;
+        }
+        
+        /* 作者信息 */
+        .author-info {
+            color: #999;
+            font-size: 12px;
+            margin-bottom: 20px;
+            text-align: right;
+            font-style: italic;
+        }
+        
+        /* 预览区域 */
+        .preview-section {
+            background-color: var(--background-color);
+            display: flex;
+            flex-direction: column;
+        }
+        
+        /* 状态栏 */
+        .status-bar {
+            background-color: #f8f9fa;
+            padding: 10px 15px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            color: #555;
+            font-size: 14px;
+            border-bottom: 1px solid #eaeaea;
+        }
+        
+        .time {
+            font-weight: 600;
+        }
+        
+        .network {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+        
+        .close-btn {
+            font-size: 20px;
+            cursor: pointer;
+            width: 24px;
+            height: 24px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+            transition: background-color 0.2s;
+        }
+        
+        .close-btn:hover {
+            background-color: #eee;
+        }
+        
+        /* 教师信息区域 */
+        .teacher-info {
+            background-color: #fff;
+            padding: 20px 15px;
+            border-bottom: 1px solid #eaeaea;
+        }
+        
+        .teacher-header {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+        
+        .teacher-avatar-container {
+            position: relative;
+        }
+        
+        /* 圆形头像样式 */
+        .teacher-avatar.circle {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 3px solid #e9f2ff;
+        }
+        
+        /* 3:4矩形头像样式 */
+        .teacher-avatar.rectangle {
+            width: 80px;
+            height: 106px; /* 80 * 4/3 ≈ 106.67，取整为106px */
+            border-radius: 8px;
+            object-fit: cover;
+            border: 3px solid #e9f2ff;
+        }
+        
+        .avatar-placeholder.circle {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            background-color: #e9f2ff;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #4a8cff;
+            font-size: 28px;
+            border: 3px dashed #c2d9ff;
+        }
+        
+        .avatar-placeholder.rectangle {
+            width: 80px;
+            height: 106px;
+            border-radius: 8px;
+            background-color: #e9f2ff;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #4a8cff;
+            font-size: 28px;
+            border: 3px dashed #c2d9ff;
+        }
+        
+        .teacher-details {
+            flex: 1;
+        }
+        
+        .teacher-name-section {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 5px;
+        }
+        
+        .teacher-name {
+            font-size: 22px;
+            font-weight: 700;
+            color: #1a2b50;
+        }
+        
+        .add-photo-btn {
+            background-color: #4a8cff;
+            color: white;
+            border: none;
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            font-size: 16px;
+            transition: background-color 0.2s;
+        }
+        
+        .add-photo-btn:hover {
+            background-color: #3a7cff;
+        }
+        
+        .teacher-title {
+            color: #666;
+            font-size: 14px;
+        }
+        
+        /* 简介区域 */
+        .intro-section {
+            background-color: #fff;
+            padding: 20px 15px;
+            border-bottom: 1px solid #eaeaea;
+        }
+        
+        .intro-title {
+            font-weight: bold;
+            font-size: 16px;
+            color: #1a2b50;
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .intro-content {
+            font-size: 14px;
+            color: #555;
+            line-height: 1.6;
+            padding: 10px 0;
+        }
+        
+        /* 教学反馈区域 */
+        .feedback-section {
+            background-color: #fff;
+            border-bottom: 1px solid #eaeaea;
+        }
+        
+        .feedback-header {
+            padding: 15px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            cursor: pointer;
+            border-bottom: 1px solid #eaeaea;
+        }
+        
+        .feedback-header h3 {
+            font-size: 16px;
+            color: #1a2b50;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin: 0;
+        }
+        
+        .toggle-feedback {
+            background: none;
+            border: none;
+            color: #4a8cff;
+            cursor: pointer;
+            font-size: 14px;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+        
+        .feedback-content {
+            padding: 20px 15px;
+            transition: all 0.3s ease;
+        }
+        
+        .feedback-content.collapsed {
+            display: none;
+        }
+        
+        /* 反馈指标区域 */
+        .feedback-metrics {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 20px;
+            margin-top: 20px;
+        }
+        
+        .metric {
+            text-align: center;
+            padding: 15px 10px;
+            background-color: #f8f9fa;
+            border-radius: 8px;
+        }
+        
+        .metric-value {
+            font-size: 24px;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+        
+        .metric-label {
+            font-size: 12px;
+            color: #666;
+        }
+        
+        .metric-1 .metric-value {
+            color: #4a8cff;
+        }
+        
+        .metric-2 .metric-value {
+            color: #1dd1a1;
+        }
+        
+        .metric-3 .metric-value {
+            color: #ff9f43;
+        }
+        
+        /* 课程评论区域 */
+        .comments-section {
+            background-color: #fff;
+            padding: 0 15px 20px;
+            min-height: 300px;
+        }
+        
+        .comments-header {
+            padding: 15px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid #eaeaea;
+        }
+        
+        .comments-header h3 {
+            font-size: 16px;
+            color: #1a2b50;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin: 0;
+        }
+        
+        .comments-empty {
+            text-align: center;
+            padding: 40px 20px;
+            color: #999;
+        }
+        
+        .comment {
+            padding: 15px 0;
+            border-bottom: 1px solid #f0f0f0;
+            position: relative;
+            background-color: #fff !important;
+            opacity: 1 !important;
+        }
+        
+        .comment-header {
+            display: flex;
+            align-items: center;
+            margin-bottom: 8px;
+        }
+        
+        .comment-avatar {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            object-fit: cover;
+            margin-right: 10px;
+        }
+        
+        .comment-info {
+            flex: 1;
+        }
+        
+        .comment-user {
+            font-weight: 700;
+            font-size: 15px;
+            color: #111;
+            opacity: 1 !important;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .comment-shield {
+            font-size: 12px;
+            color: #ff0000;
+            background-color: #fff0f0;
+            padding: 2px 6px;
+            border-radius: 4px;
+            border: 1px solid #ffcccc;
+        }
+        
+        .comment-time {
+            font-size: 12px;
+            color: #666;
+            margin-top: 2px;
+            opacity: 1 !important;
+        }
+        
+        .comment-content {
+            font-size: 15px;
+            color: #000;
+            line-height: 1.5;
+            font-weight: 400;
+            opacity: 1 !important;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+        }
+        
+        .comment-actions {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 10px;
+        }
+        
+        .comment-likes {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            color: #666;
+            font-size: 13px;
+            opacity: 1 !important;
+        }
+        
+        .like-btn {
+            color: #666;
+            background: none;
+            border: none;
+            cursor: pointer;
+            font-size: 14px;
+            opacity: 1 !important;
+        }
+        
+        .like-btn.liked {
+            color: #ff4757;
+        }
+        
+        .comment-delete-btn {
+            position: absolute;
+            top: 10px;
+            right: 0;
+            background: none;
+            border: none;
+            color: #999;
+            cursor: pointer;
+            font-size: 14px;
+            padding: 5px;
+            border-radius: 4px;
+            transition: all 0.2s;
+            opacity: 1 !important;
+        }
+        
+        .comment-delete-btn:hover {
+            color: #ff4757;
+            background-color: #fff0f0;
+        }
+        
+        /* 截图优化样式 */
+        .screenshot-mode .comment-content,
+        .screenshot-mode .comment-user,
+        .screenshot-mode .comment-time,
+        .screenshot-mode .comment-likes {
+            color: #000000 !important;
+            opacity: 1 !important;
+            text-shadow: 0 0 0.5px rgba(0,0,0,0.1) !important;
+        }
+        
+        .screenshot-mode .comment-content {
+            font-weight: 500 !important;
+        }
+        
+        .screenshot-mode .comment-user {
+            font-weight: 700 !important;
+        }
+        
+        /* 自定义设置区域 */
+        .customize-section {
+            background-color: #fff;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+        }
+        
+        .customize-section h3 {
+            margin-bottom: 15px;
+            color: #1a2b50;
+            font-size: 18px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .customize-section h3 i {
+            color: #4a8cff;
+        }
+        
+        .form-group {
+            margin-bottom: 15px;
+        }
+        
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 600;
+            color: #555;
+            font-size: 14px;
+        }
+        
+        .form-control {
+            width: 100%;
+            padding: 10px 12px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            font-size: 14px;
+            transition: border-color 0.2s;
+        }
+        
+        .form-control:focus {
+            outline: none;
+            border-color: #4a8cff;
+        }
+        
+        .form-row {
+            display: flex;
+            gap: 10px;
+        }
+        
+        .form-row .form-group {
+            flex: 1;
+        }
+        
+        .btn {
+            padding: 10px 20px;
+            background-color: #4a8cff;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background-color 0.2s;
+            font-size: 15px;
+        }
+        
+        .btn:hover {
+            background-color: #3a7cff;
+        }
+        
+        .btn-block {
+            width: 100%;
+        }
+        
+        .btn-secondary {
+            background-color: #6c757d;
+        }
+        
+        .btn-secondary:hover {
+            background-color: #5a6268;
+        }
+        
+        .btn-warning {
+            background-color: #ffc107;
+            color: #212529;
+        }
+        
+        .btn-warning:hover {
+            background-color: #e0a800;
+        }
+        
+        /* 图片上传样式 */
+        .image-upload-container {
+            margin-top: 10px;
+        }
+        
+        .image-preview {
+            max-width: 100%;
+            max-height: 200px;
+            margin-top: 10px;
+            border-radius: 8px;
+            display: none;
+        }
+        
+        .image-preview.show {
+            display: block;
+        }
+        
+        /* 头像边框切换样式 */
+        .avatar-frame-options {
+            display: flex;
+            gap: 10px;
+            margin-top: 10px;
+        }
+        
+        .avatar-frame-option {
+            flex: 1;
+            text-align: center;
+            padding: 10px;
+            border: 2px solid #eaeaea;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        
+        .avatar-frame-option:hover {
+            border-color: #c2d9ff;
+        }
+        
+        .avatar-frame-option.active {
+            border-color: #4a8cff;
+            background-color: #f0f5ff;
+        }
+        
+        .frame-preview {
+            width: 60px;
+            height: 60px;
+            margin: 0 auto 5px;
+            border: 2px solid #e9f2ff;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background-color: #f8f9fa;
+        }
+        
+        .frame-preview.circle {
+            border-radius: 50%;
+        }
+        
+        .frame-preview.rectangle {
+            border-radius: 8px;
+            width: 45px; /* 保持3:4比例 */
+            height: 60px;
+        }
+        
+        .frame-label {
+            font-size: 12px;
+            color: #555;
+        }
+        
+        /* 隐藏元素 */
+        .hidden {
+            display: none;
+        }
+        
+        /* 提示信息 */
+        .hint {
+            font-size: 12px;
+            color: #999;
+            margin-top: 5px;
+        }
+        
+        /* 手机端布局 */
+        @media (max-width: 767px) {
+            .container {
+                flex-direction: column;
+            }
+            
+            .editor-section {
+                order: 1;
+                max-width: 100%;
+                border-right: none;
+                border-bottom: 1px solid var(--border-color);
+                transition: transform 0.3s ease;
+                z-index: 100;
+                background-color: var(--card-background);
+            }
+            
+            .preview-section {
+                order: 2;
+                transition: margin-top 0.3s ease;
+            }
+            
+            .form-row {
+                flex-direction: column;
+                gap: 0;
+            }
+            
+            /* 抽屉式交互样式 */
+            .editor-section.drawer-hidden {
+                transform: translateY(-100%);
+                position: fixed;
+                top: 0;
+                left: 0;
+                right: 0;
+                height: 60vh;
+                overflow-y: auto;
+                box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            }
+            
+            .preview-section.drawer-expanded {
+                margin-top: 0;
+                height: 100vh;
+            }
+            
+            /* 抽屉控制按钮 */
+            .drawer-control {
+                position: fixed;
+                top: 10px;
+                right: 10px;
+                z-index: 101;
+                background-color: #4a8cff;
+                color: white;
+                border: none;
+                border-radius: 50%;
+                width: 44px;
+                height: 44px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                font-size: 18px;
+                cursor: pointer;
+                box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+                transition: all 0.3s ease;
+            }
+            
+            .drawer-control:hover {
+                background-color: #3a7cff;
+                transform: scale(1.05);
+            }
+            
+            .drawer-control.hidden {
+                display: none;
+            }
+            
+            /* 抽屉开关设置 */
+            .drawer-toggle-section {
+                background-color: #f8f9fa;
+                padding: 15px;
+                border-radius: 8px;
+                margin-bottom: 15px;
+                border: 1px solid #eaeaea;
+            }
+            
+            .drawer-toggle-label {
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+                cursor: pointer;
+            }
+            
+            .drawer-toggle-text {
+                font-weight: 600;
+                color: #1a2b50;
+                font-size: 14px;
+            }
+            
+            .toggle-switch {
+                position: relative;
+                width: 50px;
+                height: 24px;
+            }
+            
+            .toggle-switch input {
+                opacity: 0;
+                width: 0;
+                height: 0;
+            }
+            
+            .toggle-slider {
+                position: absolute;
+                cursor: pointer;
+                top: 0;
+                left: 0;
+                right: 0;
+                bottom: 0;
+                background-color: #ccc;
+                transition: .4s;
+                border-radius: 24px;
+            }
+            
+            .toggle-slider:before {
+                position: absolute;
+                content: "";
+                height: 16px;
+                width: 16px;
+                left: 4px;
+                bottom: 4px;
+                background-color: white;
+                transition: .4s;
+                border-radius: 50%;
+            }
+            
+            input:checked + .toggle-slider {
+                background-color: #4a8cff;
+            }
+            
+            input:checked + .toggle-slider:before {
+                transform: translateX(26px);
+            }
+        }
+        
+        /* 添加一些动画效果 */
+        .fade-in {
+            animation: fadeIn 0.3s ease-in-out;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        .shake {
+            animation: shake 0.5s ease-in-out;
+        }
+        
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            10%, 30%, 50%, 70%, 90% { transform: translateX(-5px); }
+            20%, 40%, 60%, 80% { transform: translateX(5px); }
+        }
+        
+        /* 保存图片按钮样式 */
+        .save-image-section {
+            margin-top: 10px;
+        }
+        
+        .save-image-btn {
+            position: relative;
+            background-color: #28a745;
+        }
+        
+        .save-image-btn:hover {
+            background-color: #218838;
+        }
+        
+        .save-loading {
+            animation: spin 1s linear infinite;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        /* 屏蔽标注设置区域 */
+        .shield-settings {
+            background-color: #f8f9fa;
+            padding: 15px;
+            border-radius: 6px;
+            margin-top: 10px;
+            border: 1px solid #eaeaea;
+        }
+        
+        .shield-settings.hidden {
+            display: none;
+        }
+        
+        .shield-preview {
+            margin-top: 10px;
+            padding: 10px;
+            background-color: #fff;
+            border-radius: 4px;
+            border: 1px dashed #ccc;
+            font-size: 14px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- 左侧/上方：编辑器区域 -->
+        <section class="editor-section">
+            <h2><i class="fas fa-edit"></i> 自定义设置</h2>
+            <div class="author-info">工具制作：@村里最乱炒的坏厨</div>
+            
+            <!-- 抽屉开关设置（仅手机端显示） -->
+            <div class="drawer-toggle-section hidden-on-desktop">
+                <div class="drawer-toggle-label">
+                    <span class="drawer-toggle-text">抽屉式编辑模式（手机端）</span>
+                    <label class="toggle-switch">
+                        <input type="checkbox" id="drawer-mode-toggle">
+                        <span class="toggle-slider"></span>
+                    </label>
+                </div>
+                <div class="hint">开启后，编辑区域可收起，提供更大预览空间</div>
+            </div>
+            
+            <!-- 教师信息自定义 -->
+            <div class="customize-section">
+                <h3>教师信息</h3>
+                
+                <div class="form-group">
+                    <label for="teacher-name-input">教师姓名</label>
+                    <input type="text" class="form-control" id="teacher-name-input" value="这是老师名字">
+                </div>
+                
+                <div class="form-group">
+                    <label for="teacher-title-input">教师头衔/课程</label>
+                    <input type="text" class="form-control" id="teacher-title-input" value="xx课程 任课教师">
+                </div>
+                
+                <div class="form-group">
+                    <label for="course-info-input">课程简介</label>
+                    <textarea class="form-control" id="course-info-input" rows="3">本课程系统介绍了我也不知道有什么东西，涵盖了啥啥思想啥啥特点等内容，结合实操训练，帮助学生全面理解1234567总之老大们尽情发挥吧！！</textarea>
+                </div>
+                
+                <div class="form-group">
+                    <label for="teacher-info-input">教师简介</label>
+                    <textarea class="form-control" id="teacher-info-input" rows="3">（只是举例）这位老师教学经验丰富，注重理论与实践相结合的教学方法，深受学生喜爱。</textarea>
+                </div>
+                
+                <div class="form-group">
+                    <label for="teacher-image-upload">教师照片</label>
+                    <input type="file" class="form-control" id="teacher-image-upload" accept="image/*">
+                    
+                    <!-- 新增：头像边框切换选项 -->
+                    <div class="avatar-frame-options">
+                        <div class="avatar-frame-option active" data-frame="circle">
+                            <div class="frame-preview circle">
+                                <i class="fas fa-user-circle"></i>
+                            </div>
+                            <div class="frame-label">圆形头像</div>
+                        </div>
+                        <div class="avatar-frame-option" data-frame="rectangle">
+                            <div class="frame-preview rectangle">
+                                <i class="fas fa-user"></i>
+                            </div>
+                            <div class="frame-label">3:4矩形</div>
+                        </div>
+                    </div>
+                    
+                    <div class="image-upload-container">
+                        <div class="hint">上传教师照片将显示在教师姓名旁边</div>
+                        <img id="image-preview" class="image-preview" src="" alt="图片预览">
+                    </div>
+                </div>
+            </div>
+            
+            <!-- 状态栏设置 -->
+            <div class="customize-section">
+                <h3><i class="fas fa-mobile-alt"></i> 状态栏设置</h3>
+                
+                <div class="form-group">
+                    <label for="network-text-input">网络信号显示</label>
+                    <input type="text" class="form-control" id="network-text-input" value="5G">
+                    <div class="hint">自定义状态栏中显示的网络信号文本</div>
+                </div>
+            </div>
+            
+            <!-- 反馈指标自定义 -->
+            <div class="customize-section">
+                <h3><i class="fas fa-chart-line"></i> 教学反馈指标</h3>
+                
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="score-input">综合评分 (0-5)</label>
+                        <input type="number" class="form-control" id="score-input" min="0" max="5" step="0.1" value="4.8">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="satisfaction-input">学生满意度 (%)</label>
+                        <input type="number" class="form-control" id="satisfaction-input" min="0" max="100" value="96">
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <label for="pass-rate-input">课程通过率 (%)</label>
+                    <input type="number" class="form-control" id="pass-rate-input" min="0" max="100" value="98">
+                </div>
+                
+                <button class="btn btn-block" id="update-metrics-btn">更新反馈指标</button>
+            </div>
+            
+            <!-- 添加评论自定义 -->
+            <div class="customize-section">
+                <h3><i class="fas fa-comment-medical"></i> 添加评论</h3>
+                
+                <div class="form-group">
+                    <label for="comment-user-input">评论者昵称</label>
+                    <input type="text" class="form-control" id="comment-user-input" placeholder="请输入昵称" value="学生甲">
+                </div>
+                
+                <div class="form-group">
+                    <label for="comment-user-avatar">头像URL（可选）</label>
+                    <input type="text" class="form-control" id="comment-user-avatar" placeholder="https://example.com/avatar.jpg">
+                </div>
+                
+                <div class="form-group">
+                    <label for="comment-content-input">评论内容</label>
+                    <textarea class="form-control" id="comment-content-input" placeholder="请输入评论内容" rows="3">x老师上课很认真，讲解详细，课堂互动良好。</textarea>
+                </div>
+                
+                <div class="form-group">
+                    <label for="comment-time-input">评论时间</label>
+                    <input type="datetime-local" class="form-control" id="comment-time-input">
+                    <div class="hint">如果不选择，将使用当前时间</div>
+                </div>
+                
+                <div class="form-group">
+                    <label for="comment-likes-input">初始点赞数</label>
+                    <input type="number" class="form-control" id="comment-likes-input" min="0" value="0">
+                </div>
+                
+                <!-- 新增：屏蔽标注设置 -->
+                <div class="form-group">
+                    <button class="btn btn-warning" id="toggle-shield-btn">
+                        <i class="fas fa-shield-alt"></i> 添加屏蔽标注
+                    </button>
+                    <div class="hint">为评论添加屏蔽标注，标注将显示在评论ID后面</div>
+                </div>
+                
+                <div class="shield-settings hidden" id="shield-settings">
+                    <div class="form-group">
+                        <label for="shield-text-input">标注文字</label>
+                        <input type="text" class="form-control" id="shield-text-input" value="⚠该评价涉及不良影响，已做屏蔽处理">
+                    </div>
+                    
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="shield-color-input">标注颜色</label>
+                            <input type="color" class="form-control" id="shield-color-input" value="#ff0000">
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="shield-font-size-input">字号大小</label>
+                            <select class="form-control" id="shield-font-size-input">
+                                <option value="10px">10px</option>
+                                <option value="11px">11px</option>
+                                <option value="12px" selected>12px</option>
+                                <option value="13px">13px</option>
+                                <option value="14px">14px</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <div class="shield-preview">
+                        <strong>预览效果：</strong>
+                        <span id="shield-preview-text" style="color: #ff0000; font-size: 12px;">⚠该评价涉及不良影响，已做屏蔽处理</span>
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <button class="btn btn-block" id="add-comment-btn">添加评论</button>
+                </div>
+            </div>
+            
+            <!-- 数据管理 -->
+            <div class="customize-section">
+                <h3><i class="fas fa-database"></i> 数据管理</h3>
+                
+                <div class="form-group">
+                    <button class="btn btn-block" id="add-sample-btn">添加示例评论</button>
+                </div>
+                
+                <div class="form-group">
+                    <button class="btn btn-block btn-secondary" id="clear-comments-btn">清空所有评论</button>
+                </div>
+                
+                <div class="form-group">
+                    <button class="btn btn-block btn-secondary" id="reset-btn">重置为默认数据</button>
+                </div>
+                
+                <!-- 将保存图片按钮移动到数据管理区域 -->
+                <div class="save-image-section">
+                    <button class="btn btn-block save-image-btn" id="save-image-btn">
+                        <i class="fas fa-camera"></i> 保存为PNG图片
+                    </button>
+                </div>
+            </div>
+        </section>
+        
+        <!-- 右侧/下方：预览区域 -->
+        <section class="preview-section" id="preview-section">
+            <!-- 抽屉控制按钮（仅手机端显示） -->
+            <button class="drawer-control hidden" id="drawer-control-btn">
+                <i class="fas fa-bars"></i>
+            </button>
+            
+            <!-- 状态栏 -->
+            <div class="status-bar">
+                <div class="time" id="current-time">08:47</div>
+                <div class="network">
+                    <i class="fas fa-signal"></i>
+                    <span id="network-text">5G</span>
+                </div>
+                <div class="close-btn">×</div>
+            </div>
+            
+            <!-- 教师信息区域 -->
+            <div class="teacher-info">
+                <div class="teacher-header">
+                    <div class="teacher-avatar-container">
+                        <div class="avatar-placeholder circle" id="avatar-placeholder">
+                            <i class="fas fa-user-graduate"></i>
+                        </div>
+                        <img id="teacher-avatar" class="teacher-avatar circle hidden" src="" alt="教师头像">
+                    </div>
+                    <div class="teacher-details">
+                        <div class="teacher-name-section">
+                            <h1 class="teacher-name" id="teacher-name">这个是老师名字</h1>
+                            <button class="add-photo-btn" id="add-photo-btn" title="添加教师照片">
+                                <i class="fas fa-camera"></i>
+                            </button>
+                        </div>
+                        <p class="teacher-title" id="teacher-title">xx课程 任课教师</p>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- 简介区域 -->
+            <div class="intro-section">
+                <div class="intro-title">
+                    <i class="fas fa-book"></i> 课程简介
+                </div>
+                <div class="intro-content" id="course-intro-text">
+                    本课程系统介绍了我也不知道有什么东西，涵盖了啥啥思想啥啥特点等内容，结合实操训练，帮助学生全面理解1234567总之老大们尽情发挥吧！！
+                </div>
+                
+                <div class="intro-title">
+                    <i class="fas fa-chalkboard-teacher"></i> 教师简介
+                </div>
+                <div class="intro-content" id="teacher-intro-text">
+                    （只是举例）这位老师教学经验丰富，注重理论与实践相结合的教学方法，深受学生喜爱。
+                </div>
+            </div>
+            
+            <!-- 教学反馈区域 -->
+            <div class="feedback-section">
+                <div class="feedback-header" id="feedback-toggle">
+                    <h3><i class="fas fa-chart-bar"></i> 教学反馈</h3>
+                    <button class="toggle-feedback">
+                        <span>折叠</span>
+                        <i class="fas fa-chevron-up"></i>
+                    </button>
+                </div>
+                <div class="feedback-content" id="feedback-content">
+                    <!-- 教学反馈内容将在这里动态生成 -->
+                </div>
+            </div>
+            
+            <!-- 课程评论区域 -->
+            <div class="comments-section">
+                <div class="comments-header">
+                    <h3><i class="fas fa-comments"></i> 课程评论</h3>
+                </div>
+                <div id="comments-content">
+                    <!-- 课程评论内容将在这里动态生成 -->
+                </div>
+            </div>
+        </section>
+    </div>
+
+    <script>
+        // 默认评论数据（初始为空）
+        let comments = [];
+        
+        // 示例评论数据
+        const sampleComments = [
+            {
+                id: 1,
+                user: "下面的点赞是真的可以点",
+                avatar: "",
+                time: "2098-12-14 07:35:46",
+                content: "上次去问老师作业是明天交还是后天交，老师回我：\"交。\"我：？？？",
+                likes: 233,
+                shielded: false,
+                shieldText: "",
+                shieldStyle: ""
+            },
+            {
+                id: 2,
+                user: "右边的垃圾桶是真的可以点击删除评论",
+                avatar: "",
+                time: "2099-03-01 21:10:42",
+                content: "楼上的你要不去找师娘问问吧，我看他只有和师娘说话的时候不是装疯卖傻。",
+                likes: 122,
+                shielded: false,
+                shieldText: "",
+                shieldStyle: ""
+            },
+            {
+                id: 3,
+                user: "这个id叫什么好呢",
+                avatar: "",
+                time: "2099-03-01 21:10:42",
+                content: "楼上什么时候去，我也要看师niaawzmdablzljjw",
+                likes: 93,
+                shielded: false,
+                shieldText: "",
+                shieldStyle: ""
+            },
+            {
+                id: 4,
+                user: "想不出来id了求求了",
+                avatar: "",
+                time: "2099-03-01 23:45:48",
+                content: "这是一个示例，让我想想还能说什么。。",
+                likes: 65,
+                shielded: false,
+                shieldText: "",
+                shieldStyle: ""
+            },
+            {
+                id: 5,
+                user: "总之就是这样取个id",
+                avatar: "",
+                time: "2099-03-01 23:47:48",
+                content: "我们仍未知道师娘到底是看上这家伙的哪一点，如果打过来师娘一定要救救我啊.JPG（←然后就这样不负责任地造谣（喂。",
+                likes: 33,
+                shielded: false,
+                shieldText: "",
+                shieldStyle: ""
+            },
+            {
+                id: 6,
+                user: "大概就是这个样子了",
+                avatar: "",
+                time: "2099-03-02 01:28:45",
+                content: "写点什么好呢写点什么好呢写点什么好呢写点什么好呢，，，总之老大们自由发挥吧！",
+                likes: 3,
+                shielded: false,
+                shieldText: "",
+                shieldStyle: ""
+            }
+        ];
+        
+        // 抽屉状态管理
+        let drawerMode = false;
+        let drawerHidden = false;
+        
+        // 屏蔽标注状态
+        let shieldEnabled = false;
+        
+        // 头像边框状态
+        let avatarFrame = 'circle'; // 默认圆形
+        
+        // 初始化抽屉功能
+        function initDrawer() {
+            const drawerToggle = document.getElementById('drawer-mode-toggle');
+            const drawerControlBtn = document.getElementById('drawer-control-btn');
+            const editorSection = document.querySelector('.editor-section');
+            const previewSection = document.querySelector('.preview-section');
+            
+            // 检查是否为手机端
+            const isMobile = window.innerWidth <= 767;
+            
+            if (isMobile) {
+                // 显示抽屉相关元素
+                document.querySelector('.drawer-toggle-section').classList.remove('hidden-on-desktop');
+                drawerControlBtn.classList.remove('hidden');
+                
+                // 抽屉模式切换
+                drawerToggle.addEventListener('change', function() {
+                    drawerMode = this.checked;
+                    
+                    if (drawerMode) {
+                        // 启用抽屉模式
+                        editorSection.classList.add('drawer-hidden');
+                        previewSection.classList.add('drawer-expanded');
+                        drawerHidden = true;
+                        drawerControlBtn.innerHTML = '<i class="fas fa-bars"></i>';
+                    } else {
+                        // 禁用抽屉模式
+                        editorSection.classList.remove('drawer-hidden');
+                        previewSection.classList.remove('drawer-expanded');
+                        drawerHidden = false;
+                        drawerControlBtn.classList.add('hidden');
+                    }
+                });
+                
+                // 抽屉控制按钮点击事件
+                drawerControlBtn.addEventListener('click', function() {
+                    if (drawerMode) {
+                        if (drawerHidden) {
+                            // 显示抽屉
+                            editorSection.classList.remove('drawer-hidden');
+                            previewSection.classList.remove('drawer-expanded');
+                            drawerHidden = false;
+                            this.innerHTML = '<i class="fas fa-times"></i>';
+                        } else {
+                            // 隐藏抽屉
+                            editorSection.classList.add('drawer-hidden');
+                            previewSection.classList.add('drawer-expanded');
+                            drawerHidden = true;
+                            this.innerHTML = '<i class="fas fa-bars"></i>';
+                        }
+                    }
+                });
+                
+                // 窗口大小变化时重新初始化
+                window.addEventListener('resize', function() {
+                    const isMobileNow = window.innerWidth <= 767;
+                    
+                    if (!isMobileNow && drawerMode) {
+                        // 切换到桌面端时禁用抽屉模式
+                        drawerToggle.checked = false;
+                        drawerMode = false;
+                        editorSection.classList.remove('drawer-hidden');
+                        previewSection.classList.remove('drawer-expanded');
+                        drawerControlBtn.classList.add('hidden');
+                    } else if (isMobileNow && drawerMode) {
+                        // 切换到手机端时启用抽屉模式
+                        drawerControlBtn.classList.remove('hidden');
+                    }
+                });
+            } else {
+                // 桌面端隐藏抽屉相关元素
+                document.querySelector('.drawer-toggle-section').classList.add('hidden-on-desktop');
+                drawerControlBtn.classList.add('hidden');
+            }
+        }
+        
+        // 初始化屏蔽标注功能
+        function initShieldSettings() {
+            const toggleShieldBtn = document.getElementById('toggle-shield-btn');
+            const shieldSettings = document.getElementById('shield-settings');
+            const shieldTextInput = document.getElementById('shield-text-input');
+            const shieldColorInput = document.getElementById('shield-color-input');
+            const shieldFontSizeInput = document.getElementById('shield-font-size-input');
+            const shieldPreviewText = document.getElementById('shield-preview-text');
+            
+            // 切换屏蔽标注设置显示
+            toggleShieldBtn.addEventListener('click', function() {
+                shieldEnabled = !shieldEnabled;
+                
+                if (shieldEnabled) {
+                    shieldSettings.classList.remove('hidden');
+                    this.innerHTML = '<i class="fas fa-shield-alt"></i> 隐藏屏蔽标注设置';
+                    this.classList.add('btn-warning-active');
+                } else {
+                    shieldSettings.classList.add('hidden');
+                    this.innerHTML = '<i class="fas fa-shield-alt"></i> 添加屏蔽标注';
+                    this.classList.remove('btn-warning-active');
+                }
+            });
+            
+            // 实时更新预览
+            function updateShieldPreview() {
+                const text = shieldTextInput.value;
+                const color = shieldColorInput.value;
+                const fontSize = shieldFontSizeInput.value;
+                
+                shieldPreviewText.textContent = text;
+                shieldPreviewText.style.color = color;
+                shieldPreviewText.style.fontSize = fontSize;
+            }
+            
+            shieldTextInput.addEventListener('input', updateShieldPreview);
+            shieldColorInput.addEventListener('input', updateShieldPreview);
+            shieldFontSizeInput.addEventListener('change', updateShieldPreview);
+            
+            // 初始预览
+            updateShieldPreview();
+        }
+        
+        // 初始化头像边框切换功能
+        function initAvatarFrameToggle() {
+            const frameOptions = document.querySelectorAll('.avatar-frame-option');
+            
+            frameOptions.forEach(option => {
+                option.addEventListener('click', function() {
+                    // 移除所有选项的active类
+                    frameOptions.forEach(opt => opt.classList.remove('active'));
+                    
+                    // 为当前选项添加active类
+                    this.classList.add('active');
+                    
+                    // 更新边框状态
+                    avatarFrame = this.dataset.frame;
+                    
+                    // 更新头像显示
+                    updateAvatarFrame();
+                });
+            });
+        }
+        
+        // 更新头像边框显示
+        function updateAvatarFrame() {
+            const teacherAvatar = document.getElementById('teacher-avatar');
+            const avatarPlaceholder = document.getElementById('avatar-placeholder');
+            
+            // 更新头像和占位符的类
+            teacherAvatar.className = `teacher-avatar ${avatarFrame} ${teacherAvatar.classList.contains('hidden') ? 'hidden' : ''}`;
+            avatarPlaceholder.className = `avatar-placeholder ${avatarFrame} ${avatarPlaceholder.classList.contains('hidden') ? 'hidden' : ''}`;
+        }
+        
+        // 当前时间更新
+        function updateTime() {
+            const now = new Date();
+            const hours = now.getHours().toString().padStart(2, '0');
+            const minutes = now.getMinutes().toString().padStart(2, '0');
+            document.getElementById('current-time').textContent = `${hours}:${minutes}`;
+        }
+        
+        // 初始更新时间
+        updateTime();
+        // 每分钟更新时间
+        setInterval(updateTime, 60000);
+        
+        // 渲染评论
+        function renderComments() {
+            const commentsContent = document.getElementById('comments-content');
+            commentsContent.innerHTML = '';
+            
+            if (comments.length === 0) {
+                commentsContent.innerHTML = `
+                    <div class="comments-empty">
+                        <i class="far fa-comment-dots" style="font-size: 48px; margin-bottom: 15px; color: #ccc;"></i>
+                        <p>暂无评论</p>
+                        <p style="font-size: 14px; margin-top: 10px;">点击左侧"添加示例评论"按钮或自定义添加评论</p>
+                    </div>
+                `;
+                return;
+            }
+            
+            comments.forEach(comment => {
+                const commentElement = document.createElement('div');
+                commentElement.className = 'comment fade-in';
+                commentElement.dataset.id = comment.id;
+                
+                // 生成随机头像颜色
+                const avatarColor = getAvatarColor(comment.user);
+                const avatarText = comment.user.charAt(0);
+                
+                commentElement.innerHTML = `
+                    <button class="comment-delete-btn" data-id="${comment.id}" title="删除评论">
+                        <i class="fas fa-trash"></i>
+                    </button>
+                    <div class="comment-header">
+                        ${comment.avatar ? 
+                            `<img class="comment-avatar" src="${comment.avatar}" alt="${comment.user}">` : 
+                            `<div class="comment-avatar" style="background-color: ${avatarColor}; color: white; display: flex; align-items: center; justify-content: center; font-weight: bold;">${avatarText}</div>`
+                        }
+                        <div class="comment-info">
+                            <div class="comment-user">
+                                ${comment.user}
+                                ${comment.shielded ? `<span class="comment-shield" style="${comment.shieldStyle}">${comment.shieldText}</span>` : ''}
+                            </div>
+                            <div class="comment-time">${comment.time}</div>
+                        </div>
+                    </div>
+                    <div class="comment-content">${comment.content}</div>
+                    <div class="comment-actions">
+                        <button class="like-btn ${comment.liked ? 'liked' : ''}" data-id="${comment.id}">
+                            <i class="fas fa-thumbs-up"></i> 赞
+                        </button>
+                        <div class="comment-likes">
+                            <i class="fas fa-heart" style="color: #ff4757;"></i> ${comment.likes} 人喜欢
+                        </div>
+                    </div>
+                `;
+                
+                commentsContent.appendChild(commentElement);
+            });
+            
+            // 添加点赞事件监听
+            document.querySelectorAll('.like-btn').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    const id = parseInt(this.dataset.id);
+                    const comment = comments.find(c => c.id === id);
+                    if (comment) {
+                        if (!comment.liked) {
+                            comment.likes++;
+                            comment.liked = true;
+                            this.classList.add('liked');
+                            this.innerHTML = '<i class="fas fa-thumbs-up"></i> 已赞';
+                            
+                            // 更新点赞数显示
+                            const likesElement = this.parentNode.querySelector('.comment-likes');
+                            likesElement.innerHTML = `<i class="fas fa-heart" style="color: #ff4757;"></i> ${comment.likes} 人喜欢`;
+                            
+                            // 添加点赞动画
+                            this.classList.add('shake');
+                            setTimeout(() => {
+                                this.classList.remove('shake');
+                            }, 500);
+                        }
+                    }
+                });
+            });
+            
+            // 添加删除事件监听
+            document.querySelectorAll('.comment-delete-btn').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    const id = parseInt(this.dataset.id);
+                    if (confirm('确定要删除这条评论吗？')) {
+                        comments = comments.filter(c => c.id !== id);
+                        renderComments();
+                    }
+                });
+            });
+        }
+        
+        // 渲染反馈指标
+        function renderFeedbackMetrics() {
+            const feedbackContent = document.getElementById('feedback-content');
+            const score = parseFloat(document.getElementById('score-input').value);
+            const satisfaction = parseInt(document.getElementById('satisfaction-input').value);
+            const passRate = parseInt(document.getElementById('pass-rate-input').value);
+            
+            feedbackContent.innerHTML = `
+                <div style="padding: 20px 0; text-align: center; color: #666;">
+                    <div class="feedback-metrics">
+                        <div class="metric metric-1">
+                            <div class="metric-value">${score.toFixed(1)}</div>
+                            <div class="metric-label">综合评分</div>
+                        </div>
+                        <div class="metric metric-2">
+                            <div class="metric-value">${satisfaction}%</div>
+                            <div class="metric-label">学生满意度</div>
+                        </div>
+                        <div class="metric metric-3">
+                            <div class="metric-value">${passRate}%</div>
+                            <div class="metric-label">课程通过率</div>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+        
+        // 根据用户名生成头像颜色
+        function getAvatarColor(username) {
+            const colors = [
+                '#4a8cff', '#ff6b6b', '#1dd1a1', '#ff9f43', 
+                '#5f27cd', '#00d2d3', '#54a0ff', '#ff9ff0'
+            ];
+            
+            let hash = 0;
+            for (let i = 0; i < username.length; i++) {
+                hash = username.charCodeAt(i) + ((hash << 5) - hash);
+            }
+            
+            return colors[Math.abs(hash) % colors.length];
+        }
+        
+        // 教师图片上传
+        document.getElementById('teacher-image-upload').addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(event) {
+                    const imageUrl = event.target.result;
+                    
+                    // 显示预览
+                    const preview = document.getElementById('image-preview');
+                    preview.src = imageUrl;
+                    preview.classList.add('show');
+                    
+                    // 更新教师头像
+                    const avatar = document.getElementById('teacher-avatar');
+                    avatar.src = imageUrl;
+                    avatar.classList.remove('hidden');
+                    
+                    // 隐藏占位符
+                    document.getElementById('avatar-placeholder').classList.add('hidden');
+                    
+                    // 确保应用当前边框样式
+                    updateAvatarFrame();
+                };
+                reader.readAsDataURL(file);
+            }
+        });
+        
+        // 添加图片按钮点击
+        document.getElementById('add-photo-btn').addEventListener('click', function() {
+            document.getElementById('teacher-image-upload').click();
+        });
+        
+        // 更新反馈指标
+        document.getElementById('update-metrics-btn').addEventListener('click', function() {
+            const score = parseFloat(document.getElementById('score-input').value);
+            const satisfaction = parseInt(document.getElementById('satisfaction-input').value);
+            const passRate = parseInt(document.getElementById('pass-rate-input').value);
+            
+            // 验证输入
+            if (isNaN(score) || score < 0 || score > 5) {
+                alert('综合评分必须在0-5之间');
+                document.getElementById('score-input').focus();
+                return;
+            }
+            
+            if (isNaN(satisfaction) || satisfaction < 0 || satisfaction > 100) {
+                alert('学生满意度必须在0-100之间');
+                document.getElementById('satisfaction-input').focus();
+                return;
+            }
+            
+            if (isNaN(passRate) || passRate < 0 || passRate > 100) {
+                alert('课程通过率必须在0-100之间');
+                document.getElementById('pass-rate-input').focus();
+                return;
+            }
+            
+            renderFeedbackMetrics();
+            alert('反馈指标已更新！');
+        });
+        
+        // 添加评论
+        document.getElementById('add-comment-btn').addEventListener('click', function() {
+            const userName = document.getElementById('comment-user-input').value.trim();
+            const userAvatar = document.getElementById('comment-user-avatar').value.trim();
+            const content = document.getElementById('comment-content-input').value.trim();
+            const likes = parseInt(document.getElementById('comment-likes-input').value) || 0;
+            const timeInput = document.getElementById('comment-time-input').value;
+            
+            if (!userName) {
+                alert('请填写评论者昵称');
+                document.getElementById('comment-user-input').focus();
+                return;
+            }
+            
+            if (!content) {
+                alert('请填写评论内容');
+                document.getElementById('comment-content-input').focus();
+                return;
+            }
+            
+            if (likes < 0) {
+                alert('点赞数不能为负数');
+                document.getElementById('comment-likes-input').focus();
+                return;
+            }
+            
+            // 处理时间
+            let timeString;
+            if (timeInput) {
+                // 将输入的日期时间转换为YYYY-MM-DD HH:MM:SS格式
+                const date = new Date(timeInput);
+                const year = date.getFullYear();
+                const month = (date.getMonth() + 1).toString().padStart(2, '0');
+                const day = date.getDate().toString().padStart(2, '0');
+                const hours = date.getHours().toString().padStart(2, '0');
+                const minutes = date.getMinutes().toString().padStart(2, '0');
+                const seconds = date.getSeconds().toString().padStart(2, '0');
+                timeString = `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`;
+            } else {
+                // 使用当前时间
+                const now = new Date();
+                const year = now.getFullYear();
+                const month = (now.getMonth() + 1).toString().padStart(2, '0');
+                const day = now.getDate().toString().padStart(2, '0');
+                const hours = now.getHours().toString().padStart(2, '0');
+                const minutes = now.getMinutes().toString().padStart(2, '0');
+                const seconds = now.getSeconds().toString().padStart(2, '0');
+                timeString = `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`;
+            }
+            
+            // 获取屏蔽标注设置
+            const shieldText = document.getElementById('shield-text-input').value;
+            const shieldColor = document.getElementById('shield-color-input').value;
+            const shieldFontSize = document.getElementById('shield-font-size-input').value;
+            const shieldStyle = `color: ${shieldColor}; font-size: ${shieldFontSize};`;
+            
+            // 添加新评论
+            const newComment = {
+                id: comments.length > 0 ? Math.max(...comments.map(c => c.id)) + 1 : 1,
+                user: userName,
+                avatar: userAvatar,
+                time: timeString,
+                content: content,
+                likes: likes,
+                liked: false,
+                shielded: shieldEnabled,
+                shieldText: shieldEnabled ? shieldText : "",
+                shieldStyle: shieldEnabled ? shieldStyle : ""
+            };
+            
+            comments.unshift(newComment);
+            
+            // 清空评论内容输入框
+            document.getElementById('comment-content-input').value = '';
+            
+            // 渲染评论
+            renderComments();
+        });
+        
+        // 更新教师信息
+        function updateTeacherInfo() {
+            const teacherName = document.getElementById('teacher-name-input').value;
+            const teacherTitle = document.getElementById('teacher-title-input').value;
+            const courseInfo = document.getElementById('course-info-input').value;
+            const teacherInfo = document.getElementById('teacher-info-input').value;
+            
+            document.getElementById('teacher-name').textContent = teacherName;
+            document.getElementById('teacher-title').textContent = teacherTitle;
+            document.getElementById('course-intro-text').textContent = courseInfo;
+            document.getElementById('teacher-intro-text').textContent = teacherInfo;
+        }
+        
+        // 监听教师信息变化
+        document.getElementById('teacher-name-input').addEventListener('input', updateTeacherInfo);
+        document.getElementById('teacher-title-input').addEventListener('input', updateTeacherInfo);
+        document.getElementById('course-info-input').addEventListener('input', updateTeacherInfo);
+        document.getElementById('teacher-info-input').addEventListener('input', updateTeacherInfo);
+        
+        // 监听网络信号文本变化
+        document.getElementById('network-text-input').addEventListener('input', function() {
+            document.getElementById('network-text').textContent = this.value;
+        });
+        
+        // 添加示例评论
+        document.getElementById('add-sample-btn').addEventListener('click', function() {
+            if (comments.length > 0 && !confirm('当前已有评论，确定要添加示例评论吗？')) {
+                return;
+            }
+            
+            // 清空当前评论
+            comments = [];
+            
+            // 添加示例评论
+            sampleComments.forEach(comment => {
+                comments.push({
+                    ...comment,
+                    liked: false
+                });
+            });
+            
+            // 渲染评论
+            renderComments();
+            
+            alert('示例评论已添加！');
+        });
+        
+        // 清空所有评论
+        document.getElementById('clear-comments-btn').addEventListener('click', function() {
+            if (comments.length === 0) {
+                alert('当前没有评论可清空');
+                return;
+            }
+            
+            if (confirm('确定要清空所有评论吗？此操作不可撤销。')) {
+                comments = [];
+                renderComments();
+                alert('所有评论已清空！');
+            }
+        });
+        
+        // 重置按钮
+        document.getElementById('reset-btn').addEventListener('click', function() {
+            if (confirm('确定要重置为默认数据吗？这将清除所有自定义设置和评论。')) {
+                // 重置教师信息
+                document.getElementById('teacher-name-input').value = '这是老师名字';
+                document.getElementById('teacher-title-input').value = 'xx课程 任课教师';
+                document.getElementById('course-info-input').value = '本课程系统介绍了我也不知道有什么东西，涵盖了啥啥思想啥啥特点等内容，结合实操训练，帮助学生全面理解1234567总之老大们尽情发挥吧！！';
+                document.getElementById('teacher-info-input').value = '（只是举例）这位老师教学经验丰富，注重理论与实践相结合的教学方法，深受学生喜爱。';
+                updateTeacherInfo();
+                
+                // 重置网络信号
+                document.getElementById('network-text-input').value = '5G';
+                document.getElementById('network-text').textContent = '5G';
+                
+                // 重置图片
+                document.getElementById('teacher-image-upload').value = '';
+                document.getElementById('image-preview').classList.remove('show');
+                document.getElementById('teacher-avatar').classList.add('hidden');
+                document.getElementById('avatar-placeholder').classList.remove('hidden');
+                
+                // 重置头像边框为圆形
+                document.querySelectorAll('.avatar-frame-option').forEach(opt => {
+                    opt.classList.remove('active');
+                });
+                document.querySelector('.avatar-frame-option[data-frame="circle"]').classList.add('active');
+                avatarFrame = 'circle';
+                updateAvatarFrame();
+                
+                // 重置反馈指标
+                document.getElementById('score-input').value = '4.8';
+                document.getElementById('satisfaction-input').value = '96';
+                document.getElementById('pass-rate-input').value = '98';
+                
+                // 重置评论输入
+                document.getElementById('comment-user-input').value = '学生甲';
+                document.getElementById('comment-user-avatar').value = '';
+                document.getElementById('comment-content-input').value = 'x老师上课很认真，讲解详细，课堂互动良好。';
+                document.getElementById('comment-time-input').value = '';
+                document.getElementById('comment-likes-input').value = '0';
+                
+                // 重置屏蔽标注设置
+                document.getElementById('shield-text-input').value = '⚠该评价涉及不良影响，已做屏蔽处理';
+                document.getElementById('shield-color-input').value = '#ff0000';
+                document.getElementById('shield-font-size-input').value = '12px';
+                document.getElementById('shield-settings').classList.add('hidden');
+                document.getElementById('toggle-shield-btn').innerHTML = '<i class="fas fa-shield-alt"></i> 添加屏蔽标注';
+                shieldEnabled = false;
+                
+                // 重置评论数据
+                comments = [];
+                renderComments();
+                
+                alert('已重置为默认数据！');
+            }
+        });
+        
+        // 关闭按钮
+        document.querySelector('.close-btn').addEventListener('click', function() {
+            if (confirm('确定要离开此页面吗？')) {
+                // 在实际应用中，这里会跳转到上一页
+                alert('返回上一页');
+            }
+        });
+        
+        // 保存为图片功能
+        document.getElementById('save-image-btn').addEventListener('click', function() {
+            const saveBtn = this;
+            const originalIcon = saveBtn.innerHTML;
+            
+            // 显示加载状态
+            saveBtn.innerHTML = '<i class="fas fa-spinner save-loading"></i> 生成图片中...';
+            saveBtn.disabled = true;
+            
+            // 获取预览区域
+            const previewSection = document.getElementById('preview-section');
+            
+            // 在截图前添加截图模式样式
+            previewSection.classList.add('screenshot-mode');
+            
+            // 计算高度
+            let height = previewSection.scrollHeight;
+            
+            // 如果有评论，计算评论区域的实际高度
+            if (comments.length > 0) {
+                const commentsContent = document.getElementById('comments-content');
+                if (commentsContent && commentsContent.children.length > 0) {
+                    // 获取最后一个评论元素
+                    const lastComment = commentsContent.lastElementChild;
+                    if (lastComment) {
+                        // 计算最后一个评论的底部位置
+                        const commentRect = lastComment.getBoundingClientRect();
+                        const sectionRect = previewSection.getBoundingClientRect();
+                        const commentBottom = commentRect.bottom - sectionRect.top;
+                        
+                        // 设置高度为最后一个评论底部位置加上适当边距
+                        height = commentBottom + 50; // 添加50px边距
+                    }
+                }
+            }
+            
+            // 限制最大高度，避免图片过大
+            height = Math.min(height, 5000);
+            
+            // 使用html2canvas生成图片，优化配置以解决颜色问题
+            html2canvas(previewSection, {
+                height: height,
+                scale: 2, // 平衡清晰度和性能
+                useCORS: true,
+                logging: false,
+                backgroundColor: '#ffffff',
+                allowTaint: true,
+                letterRendering: true,
+                imageTimeout: 10000,
+                ignoreElements: function(element) {
+                    // 忽略不必要的交互元素
+                    return element.classList && (
+                        element.classList.contains('like-btn') || 
+                        element.classList.contains('comment-delete-btn') ||
+                        element.classList.contains('add-photo-btn') ||
+                        element.classList.contains('drawer-control')
+                    );
+                },
+                onclone: function(clonedDoc) {
+                    // 克隆时设置文字样式
+                    const clonedCommentContents = clonedDoc.querySelectorAll('.comment-content');
+                    clonedCommentContents.forEach(element => {
+                        element.style.color = '#000000';
+                        element.style.fontWeight = '500'; // 评论内容中等粗细
+                        element.style.opacity = '1';
+                        element.style.textShadow = '0 0 0.5px rgba(0,0,0,0.2)';
+                    });
+                    
+                    // ID昵称保持粗体
+                    const clonedCommentUsers = clonedDoc.querySelectorAll('.comment-user');
+                    clonedCommentUsers.forEach(element => {
+                        element.style.color = '#000000';
+                        element.style.fontWeight = '700'; // ID昵称保持粗体
+                        element.style.opacity = '1';
+                    });
+                    
+                    // 确保背景为白色
+                    const sections = clonedDoc.querySelectorAll('.teacher-info, .intro-section, .feedback-section, .comments-section');
+                    sections.forEach(section => {
+                        section.style.backgroundColor = '#ffffff';
+                    });
+                }
+            }).then(canvas => {
+                // 移除截图模式样式
+                previewSection.classList.remove('screenshot-mode');
+                
+                // 将canvas转换为图片URL
+                const imgData = canvas.toDataURL('image/png', 1.0);
+                
+                // 创建下载链接
+                const link = document.createElement('a');
+                const teacherName = document.getElementById('teacher-name').textContent.replace(/\s+/g, '_');
+                link.download = `教师评价_${teacherName}_${new Date().toISOString().slice(0,10)}.png`;
+                link.href = imgData;
+                
+                // 触发下载
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+                
+                // 恢复按钮状态
+                saveBtn.innerHTML = originalIcon;
+                saveBtn.disabled = false;
+                
+                alert('图片保存成功！');
+            }).catch(error => {
+                console.error('保存图片失败:', error);
+                // 移除截图模式样式
+                previewSection.classList.remove('screenshot-mode');
+                
+                // 恢复按钮状态
+                saveBtn.innerHTML = originalIcon;
+                saveBtn.disabled = false;
+                
+                alert('保存图片失败，请重试。错误：' + error.message);
+            });
+        });
+        
+        // 教学反馈折叠/展开功能
+        document.getElementById('feedback-toggle').addEventListener('click', function() {
+            const feedbackContent = document.getElementById('feedback-content');
+            const toggleBtn = this.querySelector('.toggle-feedback');
+            const icon = toggleBtn.querySelector('i');
+            const text = toggleBtn.querySelector('span');
+            
+            if (feedbackContent.classList.contains('collapsed')) {
+                // 展开
+                feedbackContent.classList.remove('collapsed');
+                text.textContent = '折叠';
+                icon.className = 'fas fa-chevron-up';
+            } else {
+                // 折叠
+                feedbackContent.classList.add('collapsed');
+                text.textContent = '展开';
+                icon.className = 'fas fa-chevron-down';
+            }
+        });
+        
+        // 初始化页面
+        document.addEventListener('DOMContentLoaded', function() {
+            // 初始显示评论区域（为空）
+            renderComments();
+            updateTeacherInfo();
+            renderFeedbackMetrics();
+            initDrawer();
+            initShieldSettings();
+            initAvatarFrameToggle();
+        });
+    </script>
+</body>
+</html>
